@@ -32,7 +32,7 @@ async function run() {
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
-        // Ensures that the client will close when you finish/error
+        // Ensureing that the client will close when you finish/error
         // await client.close();
     }
 }
@@ -67,7 +67,7 @@ app.post('/addTouristSpot', async (req, res) => {
             updatedAt
         });
 
-        // Insert country data or update existing country
+        // Insert country for tourist spots or update existing country
         const countryResult = await countryCollection.updateOne(
             { name: country_Name }, 
             { $addToSet: { touristSpots: tourists_spot_name } }, 
@@ -86,7 +86,7 @@ app.post('/addTouristSpot', async (req, res) => {
 });
 
 
-// GET endpoint to fetch all tourist spots
+// GET touristspots to fetch all tourist spots
 app.get('/touristspots', async (req, res) => {
     try {
         const db = client.db('relax'); 
