@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 
-const uri =  "mongodb+srv://alamtahim3:pt6EN0EMuGlwO4N8@cluster0.yajxl17.mongodb.net/tourism?retryWrites=true&w=majority&appName=Cluster0"
+const uri =  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.yajxl17.mongodb.net/tourism?retryWrites=true&w=majority&appName=Cluster0`;
 // const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.4di5irs.mongodb.net/tourism?retryWrites=true&w=majority&appName=Cluster0`;
 console.log(uri)
 
