@@ -1,19 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion ,ObjectId} = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
+
 
 app.use(cors());
 app.use(express.json());
 
 
-const uri =  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.yajxl17.mongodb.net/tourism?retryWrites=true&w=majority&appName=Cluster0`;
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.4di5irs.mongodb.net/tourism?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.yajxl17.mongodb.net/tourism?retryWrites=true&w=majority&appName=Cluster0`;
+
 console.log(uri)
 
-// setup a MongoClient with a MongoClientOptions object to set the Stable API version
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -24,19 +25,25 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
-        // make a Connection the client to the server	(optional starting in v4.7)
+        // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
-    
+
+
+
+        
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
-        // Ensureing that the client will close when you finish/error
+        // Ensures that the client will close when you finish/error
         // await client.close();
     }
 }
 run().catch(console.dir);
+
+
+
 
 
 app.get('/', (req, res) => {
@@ -67,17 +74,16 @@ app.post('/addTouristSpot', async (req, res) => {
             updatedAt
         });
 
-        // Insert country for tourist spots or update existing country
-        const countryResult = await countryCollection.updateOne(
-            { name: country_Name }, 
-            { $addToSet: { touristSpots: tourists_spot_name } }, 
-            { upsert: true } 
-        );
+        // Insert country data or update existing country
+        // const countryResult = await countryCollection.updateOne(
+        //     { name: country_Name }, 
+        //     { $addToSet: { touristSpots: tourists_spot_name } }, 
+        //     { upsert: true } 
+        // );
 
         res.status(201).json({
             message: 'Tourist spot and associated country added successfully',
             insertedTouristSpotId: touristSpotResult.insertedId,
-            updatedCountry: countryResult.modifiedCount > 0
         });
     } catch (error) {
         console.error('Error adding tourist spot and associated country:', error);
@@ -86,10 +92,10 @@ app.post('/addTouristSpot', async (req, res) => {
 });
 
 
-// GET touristspots to fetch all tourist spots
+// GET endpoint to fetch all tourist spots
 app.get('/touristspots', async (req, res) => {
     try {
-        const db = client.db('relax'); 
+        const db = client.db('tourism'); 
         const collection = db.collection('touristspot'); 
 
         // Find all tourist spots
@@ -116,15 +122,66 @@ app.get('/latestPosts', async (req, res) => {
         res.status(500).json({ message: 'Error fetching latest posts' });
     }
 });
-app.get('/touristspots/:id', async (req, res) => {
+// to fetch country list
+app.get('/countries', async (req, res) => {
     try {
-        const db = client.db('relax'); 
+        const db = client.db('tourism'); 
+        const collection = db.collection('country'); // Assuming your posts collection is named 'posts'
+
+        // Find the latest 6 posts, sorted by creation timestamp in descending order
+        const countryList = await collection.find().toArray();
+
+        res.json(countryList);
+    } catch (error) {
+        console.error('Error fetching latest posts:', error);
+        res.status(500).json({ message: 'Error fetching latest posts' });
+    }
+});
+app.get('/countries-spot/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const db = client.db('tourism'); 
+        const collection = db.collection('touristspot'); // Assuming your posts collection is named 'posts'
+
+        // Find the latest 6 posts, sorted by creation timestamp in descending order
+        const touristSpot = await collection.find({ country_Name: id }).toArray();
+
+        res.json(touristSpot);
+    } catch (error) {
+        console.error('Error fetching latest posts:', error);
+        res.status(500).json({ message: 'Error fetching latest posts' });
+    }
+});
+app.get('/touristspots-details/:id', async (req, res) => {
+    try {
+        const db = client.db('tourism'); 
         const collection = db.collection('touristspot'); 
 
         const { id } = req.params;
 
         // Find the tourist spot by ID
-        const touristSpot = await collection.findOne({ _id: ObjectId(id) });
+        const touristSpot = await collection.findOne({ _id: new ObjectId(id) })
+
+        if (!touristSpot) {
+            return res.status(404).json({ message: 'Tourist spot not found' });
+        }
+
+        res.json(touristSpot);
+    } catch (error) {
+        console.error('Error searching for tourist spot by ID:', error);
+        res.status(500).json({ message: 'Error searching for tourist spot by ID' });
+    }
+});
+
+app.get('/touristspots/:id', async (req, res) => {
+    try {
+        const db = client.db('tourism'); 
+        const collection = db.collection('touristspot'); 
+
+        const { id } = req.params;
+
+        // Find the tourist spot by ID
+        const touristSpot = await collection.find({ userEmail: id }).toArray();
 
         if (!touristSpot) {
             return res.status(404).json({ message: 'Tourist spot not found' });
@@ -140,7 +197,7 @@ app.get('/touristspots/:id', async (req, res) => {
 // PUT endpoint to update a tourist spot by ID
 app.put('/touristspots/:id', async (req, res) => {
     try {
-        const db = client.db('relax'); 
+        const db = client.db('tourism'); 
         const collection = db.collection('touristspot'); 
 
         const { id } = req.params;
@@ -148,7 +205,7 @@ app.put('/touristspots/:id', async (req, res) => {
 
         // Update the tourist spot by ID
         const result = await collection.updateOne(
-            { _id: ObjectId(id) },
+            { _id: new ObjectId(id) },
             { $set: updatedData }
         );
 
@@ -166,13 +223,13 @@ app.put('/touristspots/:id', async (req, res) => {
 // DELETE endpoint to remove a tourist spot by ID
 app.delete('/touristspots/:id', async (req, res) => {
     try {
-        const db = client.db('relax'); 
+        const db = client.db('tourism'); 
         const collection = db.collection('touristspot'); 
 
         const { id } = req.params;
 
         // Delete the tourist spot by ID
-        const result = await collection.deleteOne({ _id: ObjectId(id) });
+        const result = await collection.deleteOne({ _id: new ObjectId(id) });
 
         if (result.deletedCount === 0) {
             return res.status(404).json({ message: 'Tourist spot not found' });
